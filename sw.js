@@ -27,12 +27,14 @@ self.addEventListener('message', function(event){
               self.registration.showNotification('Slot Available', {
                 body: 'please register from cowin website'
               });
+              return;
             }
             else if(age45 && session.min_age_limit === 45 && session.available_capacity > 0){
               console.log(center)
               self.registration.showNotification('Slot Available', {
                 body: 'please register from cowin website'
               });
+              return;
             }
           });
         });

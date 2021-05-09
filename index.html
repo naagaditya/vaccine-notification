@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#000000" />
+    <meta
+      name="description"
+      content="Get notification for vaccine"
+    />
+    <title>Cowin vaccine | Get notification</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+  </head>
+  <body style="padding: 100px;">
+    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <div>
+      <select id="states" class="form-select" onchange="getDistricts()">
+        <option selected>States</option>
+      </select>
+      <select id="districts" class="form-select">
+        <option selected>Districts</option>
+      </select>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="age18">
+        <label class="form-check-label" for="age18">
+          18+
+        </label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="checkbox" value="" id="age45" checked>
+        <label class="form-check-label" for="age45">
+          45+
+        </label>
+      </div>
+      <span>how many hour difference to get notification</span>
+      <select id="interval" class="form-select">
+        <option selected>1</option>
+        <option>3</option>
+        <option>5</option>
+        <option>7</option>
+        <option>9</option>
+        <option>11</option>
+        <option>13</option>
+        <option>15</option>
+        <option>17</option>
+        <option>19</option>
+        <option>21</option>
+        <option>24</option>
+      </select>
+      <br>
+      <br>
+      <button type="button" class="btn btn-primary" onclick="getNotification()">Get Notification</button>
+      <br>
+      <br>
+      <br>
+
+      <button type="button" class="btn btn-danger" onclick="unSubscribe()">Unsubscribe</button>
+    </div>
+    <script>
+      fetch("https://cdn-api.co-vin.in/api/v2/admin/location/states", {
+      "body": null,
+      "method": "GET",
+    }).then(res => {
+      res.json().then(({states}) => {
+        states.forEach(state => {
+          var option = document.createElement('option');
+          option.innerHTML = state.state_name;
+          option.value = state.state_id;
+          document.getElementById('states').append(option);
+        });
+      })
+    });
+    function getDistricts() {
+      fetch("https://cdn-api.co-vin.in/api/v2/admin/location/districts/"+document.getElementById('states').value, {
+      "body": null,
+      "method": "GET",
+      }).then(res => {
+        res.json().then(({districts}) => {
+          districts.forEach(district => {
+            var option = document.createElement('option');
+            option.innerHTML = district.district_name;
+            option.value = district.district_id;
+            document.getElementById('districts').append(option);
+          });
+        })
+      });
+    }
+    </script>
+    <script>
+      navigator.serviceWorker.register('sw.js',{ scope: './'}).then(sw => {
+        console.log('sw registered');
+      }).catch(err => {
+        console.log('sw not registered, ', err);
+      });
+      function unSubscribe() {
+        navigator.serviceWorker.getRegistrations().then(function(registrations) {
+          for(let registration of registrations) {
+            registration.unregister()
+          } })
+          alert('To subscribe again you need to refresh the page');
+      }
+      function getNotification() {
+        if(document.getElementById('states').value === 'States' || document.getElementById('districts').value==='Districts'){
+          alert('fill data');
+          return;
+        }
+        Notification.requestPermission(function(status) {
+          console.log('Notification permission status:', status);
+          navigator.serviceWorker.ready.then(function(serviceWorkerRegistration) {
+            serviceWorkerRegistration.active.postMessage(JSON.stringify({
+              interval: document.getElementById('interval').value,
+              state: document.getElementById('states').value,
+              district: document.getElementById('districts').value,
+              ageLimits: [document.getElementById('age45').checked, document.getElementById('age18').checked]
+            }))
+          })
+        });
+      }
+    </script>
+  </body>
+</html>
